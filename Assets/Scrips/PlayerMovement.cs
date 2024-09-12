@@ -33,23 +33,30 @@ public class PlayerMovement : MonoBehaviour
 
         change.x = Input.GetAxisRaw("Horizontal");
         change.y = Input.GetAxisRaw("Vertical");
+
         if (Input.GetButtonDown("Attack") && currentState != PlayerState.attack)
         {
             StartCoroutine(AttackCo());
-        } else if (currentState == PlayerState.walk)
-        {
-            UpdateAnimationAndMove();
         }
         
     }
 
+    void FixedUpdate()
+    {
+        if (currentState == PlayerState.walk)
+        {
+            UpdateAnimationAndMove();
+        }
+    }
+
     private IEnumerator AttackCo()
     {
+        animator.SetBool("isMoving", false);
         animator.SetBool("isAttacking", true);
         currentState = PlayerState.attack;
         yield return null;
         animator.SetBool("isAttacking", false);
-        yield return new WaitForSeconds(.3f);
+        yield return new WaitForSeconds(.2f);
         currentState = PlayerState.walk;
     }
 
@@ -71,5 +78,24 @@ public class PlayerMovement : MonoBehaviour
         myRigidbody.MovePosition(
             myRigidbody.position + change.normalized * moveSpeed * Time.fixedDeltaTime
         );
+    }
+
+    void OnTriggerEnter2D(Collider2D other)
+    {
+        if (other.CompareTag("PowerUpPicker"))
+        {
+            other.gameObject.SetActive(false);
+            float movementSpeed = other.GetComponent<SpeedForce>().speedForce;
+            float duration = other.GetComponent<SpeedForce>().duration;
+
+            StartCoroutine(BoostSpeed(movementSpeed, duration));
+        }
+    }
+
+    private IEnumerator BoostSpeed(float movementSpeed, float duration)
+    {
+        moveSpeed += movementSpeed;
+        yield return new WaitForSeconds(duration);
+        moveSpeed -= movementSpeed;
     }
 }
